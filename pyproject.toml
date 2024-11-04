@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "slack-notion-connect"
+version = "0.1.0"
+description = ""
+authors = ["hotbari <138793425+hotbari@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-dotenv = "^1.0.1"
+slack-sdk = "^3.33.3"
+requests = "^2.32.3"
+certifi = "^2024.8.30"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
