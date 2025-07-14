@@ -6,7 +6,8 @@ import certifi
 from dotenv import load_dotenv
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from flask import Flask, request, jsonify
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime, timedelta
 
 load_dotenv()
@@ -20,9 +21,6 @@ SLACK_SIGNING_SECRET = os.getenv("SLACK_SIGNING_SECRET")
 # SSL 컨텍스트 설정
 ssl_context = ssl.create_default_context(cafile=certifi.where())
 slack_client = WebClient(token=SLACK_TOKEN, ssl=ssl_context)
-
-# Flask 앱 초기화
-app = Flask(__name__)
 
 
 def convert_to_iso_date(date_str):
@@ -40,19 +38,12 @@ def convert_to_iso_date(date_str):
 def parse_message(message):
     """메시지에서 휴가 신청 정보 추출"""
     if "취소되었습니다" in message:
-        # 취소된 경우
         return {"type": "cancel", "message": message}
 
-    # 하루종일 패턴
     all_day_pattern = re.compile(r"(.*) - (\d{1,2}월 \d{1,2}일) 하루종일 휴가입니다.")
-
-    # 날짜 범위 패턴
     date_range_pattern = re.compile(r"(.*) - (\d{1,2}월 \d{1,2}일) ~ (\d{1,2}월 \d{1,2}일) 휴가입니다.")
-
-    # 반차 패턴
     half_day_pattern = re.compile(r"(.*) - (\d{1,2}월 \d{1,2}일) (오후|오전)")
 
-    # 하루종일
     all_day_match = all_day_pattern.match(message)
     if all_day_match:
         return {
@@ -61,7 +52,6 @@ def parse_message(message):
             "type": "연차"
         }
 
-    # 날짜 범위
     range_match = date_range_pattern.match(message)
     if range_match:
         name = range_match.group(1)
@@ -73,7 +63,6 @@ def parse_message(message):
             "type": "연차"
         }
 
-    # 반차
     half_day_match = half_day_pattern.match(message)
     if half_day_match:
         name = half_day_match.group(1)
@@ -129,7 +118,6 @@ def add_to_notion_calendar(vacation_info):
             else:
                 print(f"Failed to add to Notion: {response.status_code}, {response.text}")
             current_date += timedelta(days=1)
-
     else:
         title = f"[{vacation_info['type']}] {vacation_info['name']}"
         data = {
@@ -149,7 +137,6 @@ def add_to_notion_calendar(vacation_info):
                 }
             }
         }
-
         response = requests.post(NOTION_URL, headers=headers, json=data)
         if response.status_code == 200:
             print("Notion 캘린더에 추가되었습니다.")
@@ -157,22 +144,19 @@ def add_to_notion_calendar(vacation_info):
             print(f"Failed to add to Notion: {response.status_code}, {response.text}")
 
 
-@app.route("/slack/events", methods=["POST"])
-def slack_events():
+@csrf_exempt
+def slack_events(request):
     """Slack 이벤트를 처리합니다."""
-    event_data = request.json
-    if "event" in event_data:
-        event = event_data["event"]
-        if event.get("type") == "message" and "text" in event:
-            text = event["text"]
-            vacation_info = parse_message(text)
-            if vacation_info:
-                if vacation_info["type"] == "cancel":
-                    delete_from_notion_calendar({"name": vacation_info["message"].split(" - ")[0]})
-                else:
-                    add_to_notion_calendar(vacation_info)
-    return jsonify({"status": "ok"})
-
-
-if __name__ == "__main__":
-    app.run(port=3000)
+    if request.method == "POST":
+        event_data = request.json()
+        if "event" in event_data:
+            event = event_data["event"]
+            if event.get("type") == "message" and "text" in event:
+                text = event["text"]
+                vacation_info = parse_message(text)
+                if vacation_info:
+                    if vacation_info["type"] == "cancel":
+                        delete_from_notion_calendar({"name": vacation_info["message"].split(" - ")[0]})
+                    else:
+                        add_to_notion_calendar(vacation_info)
+        return JsonResponse({"status": "ok"})
