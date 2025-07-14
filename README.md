@@ -5,6 +5,10 @@
 ## 시연 영상
 ![시연영상](./snconnect_play.gif)
 
+```bash
+ffmpeg -i snconnect_play.mov -vf "fps=10,scale=600:-1:flags=lanczos" -c:v gif snconnect_play.gif
+```
+
 ---
 
 ## 주요 기능
