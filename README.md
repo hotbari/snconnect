@@ -22,6 +22,24 @@ ffmpeg -i snconnect_play.mov -vf "fps=10,scale=600:-1:flags=lanczos" -c:v gif sn
 - Notion 캘린더 데이터베이스에 휴가 정보 자동 등록/삭제
 - 중복 휴가 데이터 방지
 
+## 사용 라이브러리
+1. slack_sdk
+Slack API와 연동하여 슬랙 채널의 메세지를 읽어오는데 사용.
+Slack Bot Token을 이용해 WebClient 객체를 생성하고, `conversations_history` 메서드로 최근 메세지 조회
+
+2. requests
+HTTP 요청 처리를 위해 사용
+
+3. dotenv
+DB ID, API Token 정보와 같은 민감한 환경변수를 안전하게 관리
+
+4. re
+메세지에서 데이터를 추출하기 위해 정규표현식 사용
+
+5. ssl, certifi
+Slack SDK 통신에서 SSL 인증서 문제를 방지하기 위해 사용
+certifi가 최신 루트 인증서 번들을 제공하여 안전한 HTTPS 통신 환경 구성
+
 ---
 
 ## 사용 방법
