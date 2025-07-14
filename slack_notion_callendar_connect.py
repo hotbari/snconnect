@@ -48,7 +48,9 @@ def convert_to_iso_date(date_str):
         return None
 
 def parse_message(message):
-    """메시지에서 휴가 신청 정보 추출"""
+    """
+    슬랙 메시지에서 휴가 신청 정보 추출
+    """
     if "취소되었습니다" in message:
         # 취소된 경우
         return {"type": "cancel", "message": message}
